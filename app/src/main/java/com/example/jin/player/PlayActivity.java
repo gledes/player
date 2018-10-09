@@ -1,7 +1,6 @@
 package com.example.jin.player;
 
 import android.content.res.Configuration;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.SurfaceView;
 import android.view.View;
@@ -55,6 +54,12 @@ public class PlayActivity extends RxAppCompatActivity {
         SurfaceView surfaceView = findViewById(R.id.surfaceView);
         player.setSurfaceView(surfaceView);
 
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        player.prepare();
     }
 
     public void start(View view) {

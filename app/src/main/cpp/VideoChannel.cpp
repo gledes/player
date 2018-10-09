@@ -45,13 +45,16 @@ void VideoChannel::decode() {
 
     AVPacket *packet = NULL;
     while (isPlaying) {
+        //取出一个数据包
         int ret = packets.pop(packet);
         if (!isPlaying) {
             break;
         }
+        //取出失败
         if(!ret) {
             continue;
         }
+        //把包丢给解码器
         ret = avcodec_send_packet(avCodecContext, packet);
         releaseAvPacket(packet);
         if (ret != 0){
