@@ -1,56 +1,49 @@
 //
-// Created by Administrator on 2018/9/7.
+// Created by jin on 2018/9/17.
 //
 
 #ifndef PLAYER_BASECHANNEL_H
 #define PLAYER_BASECHANNEL_H
 
-
-#include "safe_queue.h"
-
 extern "C" {
 #include <libavcodec/avcodec.h>
 };
 
+#include "safe_queue.h"
+
 class BaseChannel {
 public:
-    BaseChannel(int id, AVCodecContext *avCodecContext) : id(id), avCodecContext(avCodecContext) {}
+    BaseChannel(int id, AVCodecContext *avCodecContext):id(id), avCodecContext(avCodecContext){
 
-    //virtual
-    virtual ~BaseChannel() {
+    }
+
+    virtual ~BaseChannel(){
         packets.setReleaseCallback(BaseChannel::releaseAvPacket);
         packets.clear();
     }
 
-    /**
-     * 释放 AVPacket
-     * @param packet
-     */
     static void releaseAvPacket(AVPacket*& packet) {
         if (packet) {
             av_packet_free(&packet);
-            //为什么用指针的指针？
-            // 指针的指针能够修改传递进来的指针的指向
-            packet = 0;
+            packet = NULL;
         }
     }
 
-    static void releaseAvFrame(AVFrame*& frame){
+    static void releaseAvFrame(AVFrame*& frame) {
         if (frame) {
             av_frame_free(&frame);
-            //为什么用指针的指针？
-            // 指针的指针能够修改传递进来的指针的指向
-            frame = 0;
+            frame = NULL;
         }
     }
 
-    //纯虚方法 相当于 抽象方法
     virtual void play() = 0;
 
+public:
     int id;
     SafeQueue<AVPacket *> packets;
-    bool isPlaying;
+    bool isPlaying = false;
     AVCodecContext *avCodecContext;
 };
+
 
 #endif //PLAYER_BASECHANNEL_H

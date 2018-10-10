@@ -1,28 +1,28 @@
 //
-// Created by Administrator on 2018/9/5.
+// Created by jin on 2018/9/16.
 //
 
-extern "C"{
+#include "VideoChannel.h"
+#include "macro.h"
+extern "C" {
 #include <libavutil/imgutils.h>
 }
-#include "VideoChannel.h"
 
-void *decode_task(void *args) {
-    VideoChannel *channel = static_cast<VideoChannel *>(args);
-    channel->decode();
+
+
+void* decode_task(void *args) {
+    VideoChannel *videoChannel = static_cast<VideoChannel *>(args);
+    videoChannel->decode();
     return 0;
 }
 
-void *render_task(void *args) {
-    VideoChannel *channel = static_cast<VideoChannel *>(args);
-    channel->render();
+void* render_task(void *args) {
+    VideoChannel *videoChannel = (VideoChannel *)args;
+    videoChannel->render();
     return 0;
 }
 
-
-
-VideoChannel::VideoChannel(int id, AVCodecContext *avCodecContext) : BaseChannel(id,
-                                                                                 avCodecContext) {
+VideoChannel::VideoChannel(int id, AVCodecContext *avCodecContext) : BaseChannel(id, avCodecContext) {
 
     frames.setReleaseCallback(releaseAvFrame);
 }
@@ -32,75 +32,71 @@ VideoChannel::~VideoChannel() {
 }
 
 void VideoChannel::play() {
-    isPlaying = 1;
+    isPlaying = true;
     //1、解码
-    pthread_create(&pid_decode, 0, decode_task, this);
+    pthread_create(&pid_decode, NULL, decode_task, this);
+
     //2、播放
-    pthread_create(&pid_render, 0, render_task, this);
+    pthread_create(&pid_render, NULL, render_task , this);
+
 }
 
-//解码
 void VideoChannel::decode() {
-    AVPacket *packet = 0;
+
+    AVPacket *packet = NULL;
     while (isPlaying) {
-        //取出一个数据包
         int ret = packets.pop(packet);
         if (!isPlaying) {
             break;
         }
-        //取出失败
-        if (!ret) {
+        if(!ret) {
             continue;
         }
-        //把包丢给解码器
         ret = avcodec_send_packet(avCodecContext, packet);
         releaseAvPacket(packet);
-        //重试
-        if (ret != 0) {
+        if (ret != 0){
             break;
         }
-        //代表了一个图像 (将这个图像先输出来)
+        //内存没释放
         AVFrame *frame = av_frame_alloc();
-        //从解码器中读取 解码后的数据包 AVFrame
         ret = avcodec_receive_frame(avCodecContext, frame);
-        //需要更多的数据才能够进行解码
         if (ret == AVERROR(EAGAIN)) {
             continue;
-        } else if(ret != 0){
+        } else if (ret != 0) {
             break;
         }
-        //再开一个线程 来播放 (流畅度)
+//        LOGE("解码成功");
         frames.push(frame);
+
+
     }
+
     releaseAvPacket(packet);
+
 }
 
-//播放
 void VideoChannel::render() {
-    //目标： RGBA
-    swsContext = sws_getContext(
-            avCodecContext->width, avCodecContext->height,avCodecContext->pix_fmt,
-            avCodecContext->width, avCodecContext->height,AV_PIX_FMT_RGBA,
-            SWS_BILINEAR,0,0,0);
-    AVFrame* frame = 0;
-    //指针数组
+
+    swsContext = sws_getContext(avCodecContext->width, avCodecContext->height, avCodecContext->pix_fmt,
+                                            avCodecContext->width, avCodecContext->height, AV_PIX_FMT_RGBA,
+                                            SWS_BILINEAR, NULL, NULL, NULL);
+
+    AVFrame *frame = NULL;
     uint8_t *dst_data[4];
     int dst_linesize[4];
     av_image_alloc(dst_data, dst_linesize,
-                   avCodecContext->width, avCodecContext->height,AV_PIX_FMT_RGBA, 1);
-    while (isPlaying){
+                avCodecContext->width, avCodecContext->height, AV_PIX_FMT_RGBA, 1);
+
+    LOGE("开始宣染");
+    while (isPlaying) {
         int ret = frames.pop(frame);
-        if (!isPlaying){
+        if (!isPlaying) {
             break;
         }
-        //src_linesize: 表示每一行存放的 字节长度
-        sws_scale(swsContext, reinterpret_cast<const uint8_t *const *>(frame->data),
-                  frame->linesize, 0,
-                  avCodecContext->height,
-                  dst_data,
-                  dst_linesize);
-        //回调出去进行播放
-        callback(dst_data[0],dst_linesize[0],avCodecContext->width, avCodecContext->height);
+        sws_scale(swsContext, (const uint8_t *const *) frame->data,
+                  frame->linesize, 0, avCodecContext->height, dst_data, dst_linesize);
+        callback(dst_data[0], dst_linesize[0], avCodecContext->width, avCodecContext->height);
+//        LOGE("宣染");
         releaseAvFrame(frame);
     }
     av_freep(&dst_data[0]);
