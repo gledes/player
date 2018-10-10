@@ -5,19 +5,18 @@
 #ifndef PLAYER_SAFE_QUEUE_H
 #define PLAYER_SAFE_QUEUE_H
 
-
+#endif //PLAYER_SAFE_QUEUE_H
 
 #include <queue>
 #include <pthread.h>
 
-
-
-
 using namespace std;
 
-template<typename T>
+
+template <class T>
 class SafeQueue {
-    typedef void (*ReleaseCallback)(T &);
+
+    typedef void (*ReleaseCallback)(T&);
 
     typedef void (*SyncHandle)(queue<T> &);
 
@@ -27,18 +26,17 @@ public:
         pthread_cond_init(&cond, NULL);
     }
     ~SafeQueue() {
-
-        pthread_cond_destroy(&cond);
         pthread_mutex_destroy(&mutex);
+        pthread_cond_destroy(&cond);
     }
 
-    void push(const T new_value) {
+    void push(T value) {
 
         pthread_mutex_lock(&mutex);
         if (work) {
-            q.push(new_value);
+            q.push(value);
             pthread_cond_signal(&cond);
-            pthread_mutex_unlock(&mutex);
+//            pthread_mutex_unlock(&mutex);
         }
         pthread_mutex_unlock(&mutex);
     }
@@ -71,7 +69,9 @@ public:
         int32_t size = q.size();
         for (int i = 0; i < size; ++i) {
             T value = q.front();
-            releaseCallback(value);
+            if (NULL != releaseCallback) {
+                releaseCallback(value);
+            }
             q.pop();
         }
 
@@ -109,5 +109,3 @@ private:
     SyncHandle syncHandle;
 
 };
-
-#endif //PLAYER_SAFE_QUEUE_H
