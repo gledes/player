@@ -20,7 +20,7 @@ using namespace std;
 
 template<typename T>
 class SafeQueue {
-    typedef void (*ReleaseCallback)(T *);
+    typedef void (*ReleaseCallback)(T &);
 
     typedef void (*SyncHandle)(queue<T> &);
 
@@ -128,7 +128,7 @@ public:
         int size = q.size();
         for (int i = 0; i < size; ++i) {
             T value = q.front();
-            releaseCallback(&value);
+            releaseCallback(value);
             q.pop();
         }
         pthread_mutex_unlock(&mutex);

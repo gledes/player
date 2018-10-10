@@ -54,7 +54,7 @@ void VideoChannel::decode() {
         }
         //把包丢给解码器
         ret = avcodec_send_packet(avCodecContext, packet);
-        releaseAvPacket(&packet);
+        releaseAvPacket(packet);
         //重试
         if (ret != 0) {
             break;
@@ -72,7 +72,7 @@ void VideoChannel::decode() {
         //再开一个线程 来播放 (流畅度)
         frames.push(frame);
     }
-    releaseAvPacket(&packet);
+    releaseAvPacket(packet);
 }
 
 //播放
@@ -101,10 +101,10 @@ void VideoChannel::render() {
                   dst_linesize);
         //回调出去进行播放
         callback(dst_data[0],dst_linesize[0],avCodecContext->width, avCodecContext->height);
-        releaseAvFrame(&frame);
+        releaseAvFrame(frame);
     }
     av_freep(&dst_data[0]);
-    releaseAvFrame(&frame);
+    releaseAvFrame(frame);
 }
 
 void VideoChannel::setRenderFrameCallback(RenderFrameCallback callback) {

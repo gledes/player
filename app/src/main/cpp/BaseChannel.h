@@ -26,21 +26,21 @@ public:
      * 释放 AVPacket
      * @param packet
      */
-    static void releaseAvPacket(AVPacket** packet) {
+    static void releaseAvPacket(AVPacket*& packet) {
         if (packet) {
-            av_packet_free(packet);
+            av_packet_free(&packet);
             //为什么用指针的指针？
             // 指针的指针能够修改传递进来的指针的指向
-            *packet = 0;
+            packet = 0;
         }
     }
 
-    static void releaseAvFrame(AVFrame** frame){
+    static void releaseAvFrame(AVFrame*& frame){
         if (frame) {
-            av_frame_free(frame);
+            av_frame_free(&frame);
             //为什么用指针的指针？
             // 指针的指针能够修改传递进来的指针的指向
-            *frame = 0;
+            frame = 0;
         }
     }
 
