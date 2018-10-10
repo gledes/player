@@ -31,7 +31,6 @@ public:
     }
 
     void push(T value) {
-
         pthread_mutex_lock(&mutex);
         if (work) {
             q.push(value);
@@ -86,7 +85,7 @@ public:
         this->syncHandle = syncHandle;
     }
 
-    void setWork(int work) {
+    void setWork(bool work) {
         pthread_mutex_lock(&mutex);
         this->work = work;
         pthread_cond_signal(&cond);
@@ -104,7 +103,7 @@ private:
     pthread_cond_t cond;
     queue<T> q;
 
-    int work;
+    bool work = true;
     ReleaseCallback releaseCallback;
     SyncHandle syncHandle;
 
