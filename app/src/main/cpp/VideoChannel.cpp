@@ -24,15 +24,16 @@ void* render_task(void *args) {
 
 VideoChannel::VideoChannel(int id, AVCodecContext *avCodecContext) : BaseChannel(id, avCodecContext) {
 
-    frames.setReleaseCallback(releaseAvFrame);
 }
 
 VideoChannel::~VideoChannel() {
-    frames.clear();
+
 }
 
 void VideoChannel::play() {
     isPlaying = true;
+    packets.setWork(true);
+    frames.setWork(true);
     //1、解码
     pthread_create(&pid_decode, NULL, decode_task, this);
 

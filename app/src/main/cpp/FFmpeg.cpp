@@ -133,9 +133,11 @@ void FFmpeg::_prepare() {
 void FFmpeg::start() {
 
     isPlaying = true;
-    if(videoChannel) {
-        videoChannel->packets.setWork(true);
+    if (videoChannel) {
         videoChannel->play();
+    }
+    if (audioChannel) {
+        audioChannel->play();
     }
 
     pthread_create(&pid_play, NULL, task_play, this);
@@ -153,7 +155,7 @@ void FFmpeg::_start() {
             //读取成功
             //stream_index 这一个流的序号
             if(audioChannel && audioChannel->id == packet->stream_index) {
-
+                audioChannel->packets.push(packet);
 
             } else if (videoChannel && videoChannel->id == packet->stream_index){
                 videoChannel->packets.push(packet);

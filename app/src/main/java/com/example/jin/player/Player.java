@@ -102,7 +102,7 @@ public class Player implements SurfaceHolder.Callback {
 
     public native void native_setSurface(Surface surface);
 
-    public native void native_destory();
+//    public native void native_destory();
 
 
 }

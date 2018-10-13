@@ -14,12 +14,14 @@ extern "C" {
 class BaseChannel {
 public:
     BaseChannel(int id, AVCodecContext *avCodecContext):id(id), avCodecContext(avCodecContext){
-
+        frames.setReleaseCallback(releaseAvFrame);
+        packets.setReleaseCallback(releaseAvPacket);
     }
 
     virtual ~BaseChannel(){
-        packets.setReleaseCallback(BaseChannel::releaseAvPacket);
+
         packets.clear();
+        frames.clear();
     }
 
     static void releaseAvPacket(AVPacket*& packet) {
@@ -41,6 +43,7 @@ public:
 public:
     int id;
     SafeQueue<AVPacket *> packets;
+    SafeQueue<AVFrame *> frames;
     bool isPlaying = false;
     AVCodecContext *avCodecContext;
 };

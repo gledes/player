@@ -54,12 +54,13 @@ public class PlayActivity extends RxAppCompatActivity {
         SurfaceView surfaceView = findViewById(R.id.surfaceView);
         player.setSurfaceView(surfaceView);
 
+
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        player.prepare();
+//        player.prepare();
     }
 
     public void start(View view) {
