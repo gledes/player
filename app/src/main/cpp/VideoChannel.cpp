@@ -23,9 +23,38 @@ void *render_task(void *args) {
     return 0;
 }
 
+/**
+ * 丢包直到下一个关键帧
+ * @param q
+ */
+void dropAvPacket(queue<AVPacket *>& q) {
+    while (!q.empty()) {
+        AVPacket *packet = q.front();
+        if (packet->flags != AV_PKT_FLAG_KEY) {
+            //如果不属于I帧 就丢掉
+            BaseChannel::releaseAvPacket(packet);
+            q.pop();
+        } else {
+            break;
+        }
+    }
+
+}
+
+void dropAvFrame(queue<AVFrame *>& q) {
+    if (!q.empty()) {
+        AVFrame *frame = q.front();
+        BaseChannel::releaseAvFrame(frame);
+        q.pop();
+    }
+}
+
 VideoChannel::VideoChannel(int id, AVCodecContext *avCodecContext, AVRational time_base, int fps)
         : BaseChannel(id, avCodecContext, time_base), fps(fps) {
 
+    packets.setSyncHandle(dropAvPacket);
+
+    packets.sync();
 }
 
 VideoChannel::~VideoChannel() {
@@ -105,13 +134,16 @@ void VideoChannel::render() {
         sws_scale(swsContext, (const uint8_t *const *) frame->data,
                   frame->linesize, 0, avCodecContext->height, dst_data, dst_linesize);
         double clock = frame->best_effort_timestamp * av_q2d(time_base);
-
+        //额外的间隔时间
+        double extra_delay = frame->repeat_pict /(2*fps);
+        //真实需要间隔的时间
+        double delays = extra_delay + frame_delays;
         if (audioChannel == NULL) {
             //休眠 单位微秒
-            av_usleep(frame_delays * 1000000);
+            av_usleep(delays * 1000000);
         } else {
             if (clock == 0) {
-                av_usleep(frame_delays * 1000000);
+                av_usleep(delays * 1000000);
             } else {
                 //比较音频和视频
                 double audioClock = audioChannel->clock;
@@ -119,9 +151,13 @@ void VideoChannel::render() {
                 double diff = clock - audioClock;
 //                LOGE("clock:%f, audioClock:%f", clock, audioClock);
                 if (diff > 0) {
-                    av_usleep((frame_delays + diff) * 1000000);
+                    //视频快了，睡久点
+                    av_usleep((delays + diff) * 1000000);
                 } else if (diff < 0) {
-                    //不睡了，快点赶上音频
+                    //视频慢了 不睡了，快点赶上音频
+                    if (abs(diff) >= 0.05) {
+                        packets.sync();
+                    }
                 }
 
             }
