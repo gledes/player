@@ -102,16 +102,21 @@ void FFmpeg::_prepare() {
             return ;
         }
 
-
+        //时间单位
+        AVRational time_base = stream->time_base;
         if (codecpar->codec_type == AVMEDIA_TYPE_AUDIO) {
             //音频
             //内存没释放
-            audioChannel = new AudioChannel(i, context);
+            audioChannel = new AudioChannel(i, context, time_base);
 
         } else if (codecpar->codec_type == AVMEDIA_TYPE_VIDEO) {
+
+            //帧率，单位时间内需要显示多少个图像
+            AVRational frame_rate = stream->avg_frame_rate;
+            int fps = av_q2d(frame_rate);
             //视频
             //内存没释放
-            videoChannel = new VideoChannel(i, context);
+            videoChannel = new VideoChannel(i, context, time_base, fps);
             videoChannel->setRenderFrameCallback(callback);
 
         }
@@ -134,6 +139,7 @@ void FFmpeg::start() {
 
     isPlaying = true;
     if (videoChannel) {
+        videoChannel->setAudioChannel(audioChannel);
         videoChannel->play();
     }
     if (audioChannel) {

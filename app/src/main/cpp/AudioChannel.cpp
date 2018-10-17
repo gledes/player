@@ -6,6 +6,7 @@
 #include "AudioChannel.h"
 #include <SLES/OpenSLES.h>
 #include <SLES/OpenSLES_Android.h>
+#include "macro.h"
 
 
 
@@ -34,7 +35,7 @@ void bqPlayerCallback(SLAndroidSimpleBufferQueueItf bq, void *context) {
 
 }
 
-AudioChannel::AudioChannel(int id, AVCodecContext *avCodecContext) : BaseChannel(id, avCodecContext){
+AudioChannel::AudioChannel(int id, AVCodecContext *avCodecContext, AVRational time_base) : BaseChannel(id, avCodecContext, time_base){
     //44100个16位 44100*2
     //双声道 44100*2*2
     data = static_cast<uint8_t *>(malloc(44100 * 2 * 2));
@@ -51,14 +52,47 @@ AudioChannel::~AudioChannel() {
 
 }
 
+
+//返回获取pcm的数据大小
+    int AudioChannel::getPcm() {
+    int data_size = 0;
+    AVFrame *frame;
+    int ret = frames.pop(frame);
+
+    if (!isPlaying) {
+        if (ret) {
+            releaseAvFrame(frame);
+        }
+        return data_size;
+    }
+
+    //48000HZ 8位 ===》 44100 16位
+    //重采样
+    //将nb_samples个数据由sample_rate采样率转成44100后返回多少个数据
+    int64_t delays = swr_get_delay(swrContext, frame->sample_rate);
+    int64_t max_sample = av_rescale_rnd(delays + frame->nb_samples, 44100, frame->sample_rate, AV_ROUND_UP);
+
+    //返回每一个声道的输出数据
+    int sample = swr_convert(swrContext, &data, max_sample , const_cast<const uint8_t **>(frame->data), frame->nb_samples);
+    //获取sample个 2字节(16位) * 2 声道
+//    LOGE("delays:%ld", delays);
+//    LOGE("nb_samples:%d, sample:%d", frame->nb_samples, sample);
+    data_size = sample * 2 * 2;
+//    LOGE("data_size:%d", data_size);
+    //获取frame的一个相对播放时间, 获得相对这段播放的秒数
+    clock = frame->pts * av_q2d(time_base);
+    return data_size;
+}
+
+
 void AudioChannel::play() {
 
     packets.setWork(true);
     frames.setWork(true);
     isPlaying = true;
     swrContext = swr_alloc_set_opts(NULL, AV_CH_LAYOUT_STEREO, AV_SAMPLE_FMT_S16, 44100,
-                                    avCodecContext->channel_layout, avCodecContext->sample_fmt,
-                                    avCodecContext->sample_rate, 0, 0);
+    avCodecContext->channel_layout, avCodecContext->sample_fmt,
+            avCodecContext->sample_rate, 0, 0);
     swr_init(swrContext);
     //解码线程
     pthread_create(&pid_audio_decode, NULL, audio_decode, this);
@@ -191,29 +225,3 @@ void AudioChannel::_play() {
 
 }
 
-//返回获取pcm的数据大小
-int AudioChannel::getPcm() {
-    int data_size = 0;
-    AVFrame *frame;
-    int ret = frames.pop(frame);
-
-    if (!isPlaying) {
-        if (ret) {
-            releaseAvFrame(frame);
-        }
-        return data_size;
-    }
-
-    //48000HZ 8位 ===》 44100 16位
-    //重采样
-    //将nb_samples个数据由sample_rate采样率转成44100后返回多少个数据
-    int64_t delays = swr_get_delay(swrContext, frame->sample_rate);
-    int64_t max_sample = av_rescale_rnd(delays + frame->nb_samples, 44100, frame->sample_rate, AV_ROUND_UP);
-
-    //返回每一个声道的输出数据
-    int sample = swr_convert(swrContext, &data, max_sample , const_cast<const uint8_t **>(frame->data), frame->nb_samples);
-
-    //获取sample个 2字节(16位) * 2 声道
-    data_size = sample * 2 * 2;
-    return data_size;
-}
