@@ -4,6 +4,10 @@
 
 #include <cstring>
 #include <pthread.h>
+extern "C" {
+#include <libavutil/time.h>
+}
+
 
 
 #include "FFmpeg.h"
@@ -53,6 +57,7 @@ void FFmpeg::_prepare() {
     //设置超时时间
     av_dict_set(&options, "timeout", "5000000", 0);
     int ret = avformat_open_input(&formatContext, dataSource, NULL, &options);
+    av_dict_free(&options);
     if (ret) {
         LOGE("打开媒体失败：%s", av_err2str(ret));
         if (callHelper) {
@@ -173,6 +178,17 @@ void FFmpeg::_start() {
 
     int ret;
     while (isPlaying) {
+
+        if (audioChannel&& audioChannel->packets.size() > 100) {
+            av_usleep(1000 * 10);
+            continue;
+        }
+
+        if (videoChannel && videoChannel->packets.size() > 100) {
+            av_usleep(1000 * 10);
+            continue;
+        }
+
         //申请内存，内存没有释放
         AVPacket *packet = av_packet_alloc();
         ret = av_read_frame(formatContext, packet);
@@ -218,8 +234,8 @@ void* sync_stop(void *args) {
         avformat_free_context(ffmpeg->formatContext);
         ffmpeg->formatContext = NULL;
     }
-    DELETE(ffmpeg->audioChannel);
     DELETE(ffmpeg->videoChannel);
+    DELETE(ffmpeg->audioChannel);
     DELETE(ffmpeg);
 
     return 0;

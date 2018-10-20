@@ -65,7 +65,13 @@ extern "C"
 JNIEXPORT void JNICALL
 Java_com_example_jin_player_Player_native_1destory(JNIEnv *env, jobject instance) {
 
+    pthread_mutex_lock(&mutex);
+    if (window) {
+        ANativeWindow_release(window);
+        window = NULL;
+    }
 
+    pthread_mutex_unlock(&mutex);
 
 }
 

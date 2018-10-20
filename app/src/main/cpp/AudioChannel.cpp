@@ -44,17 +44,33 @@ AudioChannel::AudioChannel(int id, AVCodecContext *avCodecContext, AVRational ti
 }
 
 AudioChannel::~AudioChannel() {
-
     if (data) {
         free(data);
         data = NULL;
     }
 
+    if (bqPlayerObject) {
+        (*bqPlayerObject)->Destroy(bqPlayerObject);
+        bqPlayerObject = NULL;
+        bqPlayerInterface = NULL;
+        bqPlayerBufferQueueInterface = NULL;
+    }
+
+    if (outputMixObject) {
+        (*outputMixObject)->Destroy(outputMixObject);
+        outputMixObject = NULL;
+    }
+
+    if (engineObject) {
+        (*engineObject)->Destroy(engineObject);
+        engineObject = NULL;
+        engineInterface = NULL;
+    }
+
 }
 
-
 //返回获取pcm的数据大小
-    int AudioChannel::getPcm() {
+int AudioChannel::getPcm() {
     int data_size = 0;
     AVFrame *frame;
     int ret = frames.pop(frame);
@@ -81,6 +97,7 @@ AudioChannel::~AudioChannel() {
 //    LOGE("data_size:%d", data_size);
     //获取frame的一个相对播放时间, 获得相对这段播放的秒数
     clock = frame->pts * av_q2d(time_base);
+    releaseAvFrame(frame);
     return data_size;
 }
 

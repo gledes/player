@@ -36,6 +36,8 @@ public:
             q.push(value);
             pthread_cond_signal(&cond);
 //            pthread_mutex_unlock(&mutex);
+        } else {
+            releaseCallback(value);
         }
         pthread_mutex_unlock(&mutex);
     }

@@ -83,9 +83,11 @@ void VideoChannel::decode() {
     while (isPlaying) {
         int ret = packets.pop(packet);
         if (!isPlaying) {
+            releaseAvPacket(packet);
             break;
         }
         if (!ret) {
+            releaseAvPacket(packet);
             continue;
         }
         ret = avcodec_send_packet(avCodecContext, packet);
@@ -96,11 +98,11 @@ void VideoChannel::decode() {
         //内存没释放
         AVFrame *frame = av_frame_alloc();
         ret = avcodec_receive_frame(avCodecContext, frame);
-        if (ret == AVERROR(EAGAIN)) {
-            continue;
-        } else if (ret != 0) {
-            break;
-        }
+//        if (ret == AVERROR(EAGAIN)) {
+//            continue;
+//        } else if (ret != 0) {
+//            break;
+//        }
 //        LOGE("解码成功");
         frames.push(frame);
 
@@ -129,6 +131,7 @@ void VideoChannel::render() {
     while (isPlaying) {
         int ret = frames.pop(frame);
         if (!isPlaying) {
+            releaseAvFrame(frame);
             break;
         }
         sws_scale(swsContext, (const uint8_t *const *) frame->data,

@@ -28,6 +28,9 @@ public class Player implements SurfaceHolder.Callback {
     }
 
     public void setSurfaceView(SurfaceView surfaceView) {
+        if (holder != null) {
+            holder.removeCallback(this);
+        }
         holder = surfaceView.getHolder();
         holder.addCallback(this);
 
@@ -47,6 +50,7 @@ public class Player implements SurfaceHolder.Callback {
 
     public void release() {
         holder.removeCallback(this);
+        native_destory();
     }
 
     public void onError(int errorCode) {
@@ -104,7 +108,7 @@ public class Player implements SurfaceHolder.Callback {
 
     public native void native_setSurface(Surface surface);
 
-//    public native void native_destory();
+    public native void native_destory();
 
 
 }
