@@ -31,6 +31,8 @@ public:
 
     void setRenderFrameCallback(RenderFrameCallback callback);
 
+    void stop();
+
 private:
     pthread_t pid_decode;
     pthread_t pid_render;

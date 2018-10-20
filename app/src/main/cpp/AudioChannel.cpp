@@ -225,3 +225,17 @@ void AudioChannel::_play() {
 
 }
 
+void AudioChannel::stop() {
+    isPlaying = false;
+    packets.setWork(false);
+    frames.setWork(false);
+
+    pthread_join(pid_audio_decode, 0);
+    pthread_join(pid_audio_play, 0);
+    if (swrContext) {
+        swr_free(&swrContext);
+        swrContext = NULL;
+    }
+
+}
+

@@ -22,6 +22,11 @@ public:
 
         packets.clear();
         frames.clear();
+        if (avCodecContext) {
+            avcodec_close(avCodecContext);
+            avcodec_free_context(&avCodecContext);
+            avCodecContext = NULL;
+        }
     }
 
     static void releaseAvPacket(AVPacket*& packet) {

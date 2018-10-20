@@ -34,7 +34,6 @@ FFmpeg::FFmpeg(JavaCallHelper *callHelper, const char *dataSource) {
 FFmpeg::~FFmpeg() {
     delete dataSource;
     dataSource = NULL;
-    DELETE(callHelper);
 
 }
 
@@ -50,17 +49,25 @@ void FFmpeg::_prepare() {
     //初始化网络，让ffmpeg能够使用网络
     avformat_network_init();
 
-    int ret = avformat_open_input(&formatContext, dataSource, NULL, NULL);
+    AVDictionary *options = NULL;
+    //设置超时时间
+    av_dict_set(&options, "timeout", "5000000", 0);
+    int ret = avformat_open_input(&formatContext, dataSource, NULL, &options);
     if (ret) {
         LOGE("打开媒体失败：%s", av_err2str(ret));
-        callHelper->onError(THREAD_CHILD, FFMPEG_CAN_NOT_OPEN_URL);
+        if (callHelper) {
+            callHelper->onError(THREAD_CHILD, FFMPEG_CAN_NOT_OPEN_URL);
+        }
         return ;
+
     }
     //查找媒体中的音视频流
     ret = avformat_find_stream_info(formatContext, NULL);
     if (ret < 0) {
         LOGE("查找流失败:%s", av_err2str(ret));
-        callHelper->onError(THREAD_CHILD, FFMPEG_CAN_NOT_FIND_STREAMS);
+        if (callHelper) {
+            callHelper->onError(THREAD_CHILD, FFMPEG_CAN_NOT_FIND_STREAMS);
+        }
         return ;
     }
 
@@ -75,14 +82,18 @@ void FFmpeg::_prepare() {
         AVCodec *codec = avcodec_find_decoder(codecpar->codec_id);
         if (codec == NULL) {
             LOGE("查找解码器失败:%s", av_err2str(ret));
-            callHelper->onError(THREAD_CHILD, FFMPEG_FIND_DECODER_FAIL);
+            if (callHelper) {
+                callHelper->onError(THREAD_CHILD, FFMPEG_FIND_DECODER_FAIL);
+            }
             return ;
         }
         //2、获取解码器上下文  内存没释放
         AVCodecContext *context = avcodec_alloc_context3(codec);
         if (context == NULL) {
             LOGE("创建解码上下文失败:%s", av_err2str(ret));
-            callHelper->onError(THREAD_CHILD, FFMPEG_ALLOC_CODEC_CONTEXT_FAIL);
+            if (callHelper) {
+                callHelper->onError(THREAD_CHILD, FFMPEG_ALLOC_CODEC_CONTEXT_FAIL);
+            }
             return ;
         }
 
@@ -90,7 +101,9 @@ void FFmpeg::_prepare() {
         ret = avcodec_parameters_to_context(context, codecpar);
         if (ret < 0) {
             LOGE("设置解码上下文参数失败:%s", av_err2str(ret));
-            callHelper->onError(THREAD_CHILD, FFMPEG_CODEC_CONTEXT_PARAMETERS_FAIL);
+            if (callHelper) {
+                callHelper->onError(THREAD_CHILD, FFMPEG_CODEC_CONTEXT_PARAMETERS_FAIL);
+            }
             return ;
         }
 
@@ -98,7 +111,9 @@ void FFmpeg::_prepare() {
         ret = avcodec_open2(context, codec, NULL);
         if (ret) {
             LOGE("打开解码器失败:%s", av_err2str(ret));
-            callHelper->onError(THREAD_CHILD, FFMPEG_OPEN_DECODER_FAIL);
+            if (callHelper) {
+                callHelper->onError(THREAD_CHILD, FFMPEG_OPEN_DECODER_FAIL);
+            }
             return ;
         }
 
@@ -126,12 +141,16 @@ void FFmpeg::_prepare() {
     //没有音视频
     if (!audioChannel && !videoChannel) {
         LOGE("没有音视频");
-        callHelper->onError(THREAD_CHILD, FFMPEG_NOMEDIA);
+        if (callHelper) {
+            callHelper->onError(THREAD_CHILD, FFMPEG_NOMEDIA);
+        }
         return ;
     }
 
     //准备好了，可以随时通知java播放
-    callHelper->onPrepare(THREAD_CHILD);
+    if (callHelper) {
+        callHelper->onPrepare(THREAD_CHILD);
+    }
 
 }
 
@@ -177,12 +196,37 @@ void FFmpeg::_start() {
             //读取失败
 
         }
-
-
     }
-
+    isPlaying = false;
+    audioChannel->stop();
+    videoChannel->stop();
 }
 
 void FFmpeg::setRenderFrameCallback(RenderFrameCallback callback) {
     this->callback = callback;
+}
+
+void* sync_stop(void *args) {
+    FFmpeg *ffmpeg = static_cast<FFmpeg *>(args);
+    //等待prepare线程结束
+    pthread_join(ffmpeg->pid, 0);
+    //等待start线程结束
+    pthread_join(ffmpeg->pid_play, 0);
+    if(ffmpeg->formatContext) {
+        //先关闭读取（fileinputstream）
+        avformat_close_input(&ffmpeg->formatContext);
+        avformat_free_context(ffmpeg->formatContext);
+        ffmpeg->formatContext = NULL;
+    }
+    DELETE(ffmpeg->audioChannel);
+    DELETE(ffmpeg->videoChannel);
+    DELETE(ffmpeg);
+
+    return 0;
+}
+
+void FFmpeg::stop() {
+    isPlaying = false;
+    pthread_create(&pid_stop, NULL, sync_stop, this);
+
 }

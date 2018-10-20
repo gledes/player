@@ -29,6 +29,8 @@ public:
 
     int getPcm();
 
+    void stop();
+
 public:
     uint8_t *data = NULL;
 
@@ -50,7 +52,6 @@ private:
 
     //重采样
     SwrContext *swrContext = NULL;
-
 
 
 };

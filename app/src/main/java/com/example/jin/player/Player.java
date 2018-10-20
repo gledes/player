@@ -42,7 +42,7 @@ public class Player implements SurfaceHolder.Callback {
     }
 
     public void stop() {
-
+        native_stop();
     }
 
     public void release() {
@@ -99,6 +99,8 @@ public class Player implements SurfaceHolder.Callback {
     public native void native_prepare(String dataSource);
 
     public native void native_start();
+
+    public native void native_stop();
 
     public native void native_setSurface(Surface surface);
 

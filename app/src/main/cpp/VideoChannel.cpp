@@ -171,8 +171,20 @@ void VideoChannel::render() {
     }
     av_freep(&dst_data[0]);
     releaseAvFrame(frame);
+    isPlaying = false;
+    sws_freeContext(swsContext);
+    swsContext = NULL;
+
 }
 
 void VideoChannel::setRenderFrameCallback(RenderFrameCallback callback) {
     this->callback = callback;
+}
+
+void VideoChannel::stop() {
+    isPlaying = false;
+    packets.setWork(false);
+    frames.setWork(false);
+    pthread_join(pid_decode, 0);
+    pthread_join(pid_render, 0);
 }

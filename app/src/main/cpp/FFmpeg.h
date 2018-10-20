@@ -33,7 +33,7 @@ public:
 
     void setRenderFrameCallback(RenderFrameCallback callback);
 
-
+    void stop();
 
 private:
     void _prepare();
@@ -41,10 +41,11 @@ private:
     void _start();
 
 
-private:
+public:
     char *dataSource;
     pthread_t pid;
     pthread_t pid_play;
+    pthread_t pid_stop;
     //包含视频宽、高等信息
     AVFormatContext *formatContext = NULL;
 

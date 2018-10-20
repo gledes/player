@@ -6,6 +6,7 @@
 #include "macro.h"
 
 FFmpeg *ffmpeg = NULL;
+JavaCallHelper *callHelper = NULL;
 JavaVM *_vm;
 ANativeWindow *window = NULL;
 
@@ -53,8 +54,7 @@ Java_com_example_jin_player_Player_native_1prepare(JNIEnv *env, jobject instance
                                                    jstring dataSource_) {
     const char *dataSource = env->GetStringUTFChars(dataSource_, 0);
     //内存释放
-    JavaCallHelper *callHelper = new JavaCallHelper(_vm, env, instance);
-    //callHelper内存在FFmpeg中释放
+    callHelper = new JavaCallHelper(_vm, env, instance);
     ffmpeg = new FFmpeg(callHelper, dataSource);
     ffmpeg->setRenderFrameCallback(render);
     ffmpeg->prepare();
@@ -65,8 +65,7 @@ extern "C"
 JNIEXPORT void JNICALL
 Java_com_example_jin_player_Player_native_1destory(JNIEnv *env, jobject instance) {
 
-    delete(ffmpeg);
-    ffmpeg = NULL;
+
 
 }
 
@@ -91,5 +90,23 @@ Java_com_example_jin_player_Player_native_1setSurface(JNIEnv *env, jobject insta
     window = ANativeWindow_fromSurface(env, surface);
 
     pthread_mutex_unlock(&mutex);
+
+}
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_example_jin_player_Player_native_1stop(JNIEnv *env, jobject instance) {
+    if (ffmpeg) {
+        ffmpeg->stop();
+    }
+    if (callHelper) {
+        delete(callHelper);
+        callHelper = NULL;
+    }
+
+//    if (ffmpeg) {
+//        delete(ffmpeg);
+//        ffmpeg = NULL;
+//    }
 
 }
