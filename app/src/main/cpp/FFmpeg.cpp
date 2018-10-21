@@ -135,7 +135,7 @@ void FFmpeg::_prepare() {
         if (codecpar->codec_type == AVMEDIA_TYPE_AUDIO) {
             //音频
             //内存没释放
-            audioChannel = new AudioChannel(i, context, time_base);
+            audioChannel = new AudioChannel(i, callHelper, context, time_base);
 
         } else if (codecpar->codec_type == AVMEDIA_TYPE_VIDEO) {
 
@@ -144,7 +144,7 @@ void FFmpeg::_prepare() {
             int fps = av_q2d(frame_rate);
             //视频
             //内存没释放
-            videoChannel = new VideoChannel(i, context, time_base, fps);
+            videoChannel = new VideoChannel(i, callHelper, context, time_base, fps);
             videoChannel->setRenderFrameCallback(callback);
 
         }

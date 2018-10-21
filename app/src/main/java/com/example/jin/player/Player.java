@@ -68,6 +68,17 @@ public class Player implements SurfaceHolder.Callback {
 
     }
 
+    /**
+     * native 回调给java 播放进去的
+     * @param progress
+     */
+    public void onProgress(int progress) {
+//        Log.e("play", "" + progress);
+        if (null != onProgressListener) {
+            onProgressListener.onProgress(progress);
+        }
+    }
+
     @Override
     public void surfaceCreated(SurfaceHolder holder) {
 

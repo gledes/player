@@ -9,6 +9,7 @@
 #include <SLES/OpenSLES.h>
 #include <SLES/OpenSLES_Android.h>
 #include "BaseChannel.h"
+#include "JavaCallHelper.h"
 
 extern "C" {
 #include <libswresample/swresample.h>
@@ -17,7 +18,7 @@ extern "C" {
 class AudioChannel : public BaseChannel{
 
 public:
-    AudioChannel(int id, AVCodecContext *avCodecContext, AVRational time_base);
+    AudioChannel(int id, JavaCallHelper *javaCallHelper, AVCodecContext *avCodecContext, AVRational time_base);
 
     ~AudioChannel();
 

@@ -35,7 +35,8 @@ void bqPlayerCallback(SLAndroidSimpleBufferQueueItf bq, void *context) {
 
 }
 
-AudioChannel::AudioChannel(int id, AVCodecContext *avCodecContext, AVRational time_base) : BaseChannel(id, avCodecContext, time_base){
+AudioChannel::AudioChannel(int id, JavaCallHelper *javaCallHelper, AVCodecContext *avCodecContext, AVRational time_base) :
+        BaseChannel(id, javaCallHelper, avCodecContext, time_base){
     //44100个16位 44100*2
     //双声道 44100*2*2
     data = static_cast<uint8_t *>(malloc(44100 * 2 * 2));
@@ -97,6 +98,8 @@ int AudioChannel::getPcm() {
 //    LOGE("data_size:%d", data_size);
     //获取frame的一个相对播放时间, 获得相对这段播放的秒数
     clock = frame->pts * av_q2d(time_base);
+//    LOGE("clock:%f", clock);
+    javaCallHelper->onProgress(THREAD_CHILD, clock);
     releaseAvFrame(frame);
     return data_size;
 }

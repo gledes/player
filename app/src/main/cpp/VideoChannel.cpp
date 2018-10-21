@@ -49,8 +49,8 @@ void dropAvFrame(queue<AVFrame *>& q) {
     }
 }
 
-VideoChannel::VideoChannel(int id, AVCodecContext *avCodecContext, AVRational time_base, int fps)
-        : BaseChannel(id, avCodecContext, time_base), fps(fps) {
+VideoChannel::VideoChannel(int id, JavaCallHelper *javaCallHelper, AVCodecContext *avCodecContext, AVRational time_base, int fps)
+        : BaseChannel(id, javaCallHelper, avCodecContext, time_base), fps(fps) {
 
     packets.setSyncHandle(dropAvPacket);
 

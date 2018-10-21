@@ -1,6 +1,7 @@
 package com.example.jin.player;
 
 import android.os.Bundle;
+import android.util.Log;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.WindowManager;
@@ -63,11 +64,13 @@ public class Play2Activity extends RxAppCompatActivity implements SeekBar.OnSeek
 
             @Override
             public void onProgress(final int progress2) {
+                Log.e("play2Activity", "progress2:" + progress2);
                 if (!isTouch) {
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
                             int duration = player.getDuration();
+//                            Log.e("play2Activity", "duration:" + duration);
                             //如果是直播
                             if (duration != 0) {
                                 if (isSeek){
@@ -90,7 +93,7 @@ public class Play2Activity extends RxAppCompatActivity implements SeekBar.OnSeek
     @Override
     protected void onResume() {
         super.onResume();
-//        player.prepare();
+        player.prepare();
     }
 
     @Override
@@ -112,7 +115,7 @@ public class Play2Activity extends RxAppCompatActivity implements SeekBar.OnSeek
 
     @Override
     public void onStartTrackingTouch(SeekBar seekBar) {
-
+        isTouch = true;
     }
 
     @Override

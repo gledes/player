@@ -10,10 +10,12 @@ extern "C" {
 };
 
 #include "safe_queue.h"
+#include "JavaCallHelper.h"
 
 class BaseChannel {
 public:
-    BaseChannel(int id, AVCodecContext *avCodecContext, AVRational time_base):id(id), avCodecContext(avCodecContext), time_base(time_base){
+    BaseChannel(int id, JavaCallHelper *javaCallHelper,AVCodecContext *avCodecContext, AVRational time_base):
+            id(id), javaCallHelper(javaCallHelper), avCodecContext(avCodecContext), time_base(time_base){
         frames.setReleaseCallback(releaseAvFrame);
         packets.setReleaseCallback(releaseAvPacket);
     }
@@ -70,6 +72,8 @@ public:
     AVCodecContext *avCodecContext;
     AVRational time_base;
     double clock;
+    JavaCallHelper *javaCallHelper;
+
 };
 
 
