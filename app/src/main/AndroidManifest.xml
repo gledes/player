@@ -3,6 +3,8 @@
     package="com.example.jin.player">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
 
     <application
         android:allowBackup="true"
@@ -18,10 +20,15 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".PlayActivity"
+        <activity
+            android:name=".PlayActivity"
             android:configChanges="orientation|screenLayout|screenSize|keyboardHidden"
             android:screenOrientation="sensor"
-            android:theme="@style/PlayTheme"/>
+            android:theme="@style/PlayTheme" />
+        <activity android:name=".Play2Activity"
+            android:configChanges="orientation|screenLayout|screenSize|keyboardHidden"
+            android:screenOrientation="sensor"
+            android:theme="@style/PlayTheme"></activity>
     </application>
 
 </manifest>

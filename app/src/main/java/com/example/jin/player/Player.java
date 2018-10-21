@@ -20,7 +20,11 @@ public class Player implements SurfaceHolder.Callback {
 
     private SurfaceHolder holder;
 
-    private OnPrepareListener lintener;
+    private OnPrepareListener onPrepareListener;
+
+    private OnErrorListener onErrorListener;
+
+    private OnProgressListener onProgressListener;
 
 
     public void setDataSource(String dataSource) {
@@ -58,20 +62,11 @@ public class Player implements SurfaceHolder.Callback {
     }
 
     public void onPrepare() {
-        if (null != lintener) {
-            lintener.onPrepare();
+        if (null != onPrepareListener) {
+            onPrepareListener.onPrepare();
         }
 
     }
-
-    public void setOnPrepareLintener(OnPrepareListener lintener) {
-        this.lintener = lintener;
-    }
-
-    public interface OnPrepareListener {
-        void onPrepare();
-    }
-
 
     @Override
     public void surfaceCreated(SurfaceHolder holder) {
@@ -100,6 +95,19 @@ public class Player implements SurfaceHolder.Callback {
 
     }
 
+    public int getDuration() {
+        return native_getDuration();
+    }
+
+    public void seek(final int progress) {
+        new Thread() {
+            @Override
+            public void run() {
+                native_seek(progress);
+            }
+        }.start();
+    }
+
     public native void native_prepare(String dataSource);
 
     public native void native_start();
@@ -110,5 +118,32 @@ public class Player implements SurfaceHolder.Callback {
 
     public native void native_destory();
 
+    private native int native_getDuration();
+
+    private native void native_seek(int progress);
+
+    public void setOnErrorListener(OnErrorListener onErrorListener) {
+        this.onErrorListener = onErrorListener;
+    }
+
+    public void setOnPrepareListener(OnPrepareListener onPrepareListener) {
+        this.onPrepareListener = onPrepareListener;
+    }
+
+    public void setOnProgressListener(OnProgressListener onProgressListener) {
+        this.onProgressListener = onProgressListener;
+    }
+
+    public interface OnPrepareListener {
+        void onPrepare();
+    }
+
+    public interface OnErrorListener {
+        void onError(int error);
+    }
+
+    public interface OnProgressListener {
+        void onProgress(int progress);
+    }
 
 }

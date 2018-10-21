@@ -35,6 +35,12 @@ public:
 
     void stop();
 
+    int getDuration() {
+        return duration;
+    }
+
+    void seek(int i);
+
 private:
     void _prepare();
 
@@ -55,6 +61,10 @@ public:
 
     bool isPlaying = false;
     RenderFrameCallback callback = NULL;
+
+    pthread_mutex_t seekMutex;
+    int duration;
+    bool isSeek = false;
 
 };
 

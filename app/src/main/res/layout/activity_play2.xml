@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
+
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="500dp"
     android:orientation="vertical"
-    tools:context=".PlayActivity">
+    tools:context=".Play2Activity">
 
     <Button
         android:layout_width="match_parent"
@@ -13,17 +14,17 @@
         android:text="播放"/>
 
     <SurfaceView
-        android:id="@+id/surfaceView"
+        android:id="@+id/surfaceView2"
         android:layout_width="match_parent"
-        android:layout_height="200dp" />
+        android:layout_height="200dp"
+        />
 
-    <Button
+
+    <SeekBar
+        android:visibility="gone"
+        android:max="100"
+        android:id="@+id/seekBar"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:onClick="jump"
-        android:text="视频播放器"/>
-
-
-
+        android:layout_height="wrap_content"/>
 
 </LinearLayout>

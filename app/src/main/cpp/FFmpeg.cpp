@@ -33,11 +33,17 @@ FFmpeg::FFmpeg(JavaCallHelper *callHelper, const char *dataSource) {
     this->dataSource = new char[strlen(dataSource) + 1];
     strcpy(this->dataSource, dataSource);
 
+    duration = 0;
+
+    pthread_mutex_init(&seekMutex, NULL);
+
 }
 
 FFmpeg::~FFmpeg() {
+    pthread_mutex_destroy(&seekMutex);
     delete dataSource;
     dataSource = NULL;
+
 
 }
 
@@ -75,6 +81,8 @@ void FFmpeg::_prepare() {
         }
         return ;
     }
+    //视频时长（单位：微秒us，转换为秒需要除以1000000）
+    duration = formatContext->duration / 1000000;
 
     for (int i = 0; i < formatContext->nb_streams; ++i) {
         //可能代表一个视频，可能代表一个音频
@@ -203,14 +211,17 @@ void FFmpeg::_start() {
 //                LOGE("播放读视频包成功");
             }
 
-
-
         } else if(ret == AVERROR_EOF) {
             //读取完成，可能还没播放完成
+            if(videoChannel->packets.empty() && videoChannel->frames.empty() &&
+                    audioChannel->packets.empty() && audioChannel->frames.empty()) {
+                LOGE("播放完毕");
+                break;
+            }
 
         } else {
             //读取失败
-
+            break;
         }
     }
     isPlaying = false;
@@ -245,4 +256,40 @@ void FFmpeg::stop() {
     isPlaying = false;
     pthread_create(&pid_stop, NULL, sync_stop, this);
 
+}
+
+void FFmpeg::seek(int i) {
+    //进去必需在0到duration范围之类
+    if (i < 0 || i >= duration) {
+        return;
+    }
+    if (audioChannel == NULL || videoChannel == NULL) {
+        return;
+    }
+    if (formatContext == NULL) {
+        return;
+    }
+    isSeek = true;
+    pthread_mutex_lock(&seekMutex);
+    //单位是微秒
+    int64_t seek = i * 1000000;
+    //seek到请求的时间之前最近的关键帧，只有从关键帧才能开始解码出完整图片
+    av_seek_frame(formatContext, -1, seek, AVSEEK_FLAG_BACKWARD);
+    if (audioChannel != NULL) {
+        //暂停队列
+        audioChannel->stopWork();
+        //清空缓存
+        audioChannel->clear();
+        //启动队列
+        audioChannel->startWork();
+    }
+
+    if (videoChannel != NULL) {
+        videoChannel->stopWork();
+        videoChannel->clear();
+        videoChannel->startWork();
+    }
+
+    pthread_mutex_unlock(&seekMutex);
+    isSeek = false;
 }

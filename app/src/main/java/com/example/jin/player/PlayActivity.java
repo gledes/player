@@ -1,5 +1,6 @@
 package com.example.jin.player;
 
+import android.content.Intent;
 import android.content.res.Configuration;
 import android.os.Bundle;
 import android.view.SurfaceView;
@@ -22,7 +23,7 @@ public class PlayActivity extends RxAppCompatActivity {
         SurfaceView surfaceView = findViewById(R.id.surfaceView);
         player = new Player();
         player.setSurfaceView(surfaceView);
-        player.setOnPrepareLintener(new Player.OnPrepareListener() {
+        player.setOnPrepareListener(new Player.OnPrepareListener() {
             @Override
             public void onPrepare() {
                 runOnUiThread(new Runnable() {
@@ -80,4 +81,9 @@ public class PlayActivity extends RxAppCompatActivity {
     }
 
 
+    public void jump(View view) {
+        Intent intent = new Intent();
+        intent.setClass(PlayActivity.this, Play2Activity.class);
+        startActivity(intent);
+    }
 }

@@ -116,3 +116,25 @@ Java_com_example_jin_player_Player_native_1stop(JNIEnv *env, jobject instance) {
 //    }
 
 }
+
+extern "C"
+JNIEXPORT jint JNICALL
+Java_com_example_jin_player_Player_native_1getDuration(JNIEnv *env, jobject instance) {
+
+    if (ffmpeg) {
+        return ffmpeg->getDuration();
+    }
+
+    return 0;
+
+}
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_example_jin_player_Player_native_1seek(JNIEnv *env, jobject instance, jint progress) {
+
+
+    if (ffmpeg) {
+        ffmpeg->seek(progress);
+    }
+}

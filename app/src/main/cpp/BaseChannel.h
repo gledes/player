@@ -45,6 +45,23 @@ public:
 
     virtual void play() = 0;
 
+    virtual void stop() = 0;
+
+    void clear() {
+        packets.clear();
+        frames.clear();
+    }
+
+    void stopWork() {
+        packets.setWork(false);
+        frames.setWork(false);
+    }
+
+    void startWork() {
+        packets.setWork(true);
+        frames.setWork(true);
+    }
+
 public:
     int id;
     SafeQueue<AVPacket *> packets;
