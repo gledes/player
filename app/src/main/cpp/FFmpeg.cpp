@@ -197,9 +197,18 @@ void FFmpeg::_start() {
             continue;
         }
 
+        //锁住formatContext
+        pthread_mutex_lock(&seekMutex);
         //申请内存，内存没有释放
         AVPacket *packet = av_packet_alloc();
         ret = av_read_frame(formatContext, packet);
+
+        pthread_mutex_unlock(&seekMutex);
+        if (isSeek) {
+            av_packet_free(&packet);
+            continue;
+        }
+
         if (ret == 0) {
             //读取成功
             //stream_index 这一个流的序号
