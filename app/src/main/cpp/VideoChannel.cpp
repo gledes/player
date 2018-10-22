@@ -53,8 +53,10 @@ VideoChannel::VideoChannel(int id, JavaCallHelper *javaCallHelper, AVCodecContex
         : BaseChannel(id, javaCallHelper, avCodecContext, time_base), fps(fps) {
 
     packets.setSyncHandle(dropAvPacket);
-
     packets.sync();
+
+    frames.setSyncHandle(dropAvFrame);
+    frames.sync();
 }
 
 VideoChannel::~VideoChannel() {
@@ -136,34 +138,55 @@ void VideoChannel::render() {
         }
         sws_scale(swsContext, (const uint8_t *const *) frame->data,
                   frame->linesize, 0, avCodecContext->height, dst_data, dst_linesize);
-        double clock = frame->best_effort_timestamp * av_q2d(time_base);
+
+
+        /**
+         *  seek需要注意的点：编码器中存在缓存
+         *  100s 的图像,用户seek到第 50s 的位置
+         *  音频是50s的音频，但是视频 你获得的是100s的视频
+         */
+        if ((clock =frame->best_effort_timestamp) == AV_NOPTS_VALUE) {
+            clock = 0;
+        }
+        //pts 单位就是time_base
+        //av_q2d转为双精度浮点数 乘以 pts 得到pts --- 显示时间:秒
+        clock = clock * av_q2d(time_base);
         //额外的间隔时间
         double extra_delay = frame->repeat_pict /(2*fps);
         //真实需要间隔的时间
         double delays = extra_delay + frame_delays;
-        if (audioChannel == NULL) {
-            //休眠 单位微秒
+        if (clock == 0) {
             av_usleep(delays * 1000000);
         } else {
-            if (clock == 0) {
-                av_usleep(delays * 1000000);
-            } else {
-                //比较音频和视频
-                double audioClock = audioChannel->clock;
-                //间隔 音视频相关的间隔
-                double diff = clock - audioClock;
+            //比较音频和视频
+            double audioClock = audioChannel ? audioChannel->clock : 0;
+            //间隔 音视频相关的间隔
+            double diff = fabs(clock - audioClock);
+            LOGE("当前和音频比较:%f - %f = %f", clock, audioClock, diff);
 //                LOGE("clock:%f, audioClock:%f", clock, audioClock);
-                if (diff > 0) {
-                    //视频快了，睡久点
-                    av_usleep((delays + diff) * 1000000);
-                } else if (diff < 0) {
-                    //视频慢了 不睡了，快点赶上音频
-                    if (abs(diff) >= 0.05) {
-                        packets.sync();
+            if (audioChannel) {
+                //如果视频比音频快，延迟差值播放，否则直接播放
+                if (clock > audioClock) {
+                    if (diff > 1) {
+                        //差的太久了， 那只能慢慢赶 不然就是卡好久
+                        av_usleep(delays * 2 * 1000000);
+                    } else {
+                        av_usleep((delays + diff) * 1000000);
                     }
-                }
+                } else {
+                    //音频比视频快
+                    //视频慢了 0.05s 已经比较明显了 (丢帧)
+                    if (diff >= 0.05) {
+                        releaseAvFrame(frame);
+                        frames.sync();
+                    }
+//                    if (diff > 1) {
+//                        //一种可能：快进了（因为解码器中有缓存数据，这样获得的avframe就和seek的匹配了）
+//                    }
 
+                }
             }
+
         }
 
 
