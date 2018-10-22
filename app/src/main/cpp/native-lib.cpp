@@ -105,10 +105,10 @@ Java_com_example_jin_player_Player_native_1stop(JNIEnv *env, jobject instance) {
     if (ffmpeg) {
         ffmpeg->stop();
     }
-    if (callHelper) {
-        delete(callHelper);
-        callHelper = NULL;
-    }
+//    if (callHelper) {
+//        delete(callHelper);
+//        callHelper = NULL;
+//    }
 
 //    if (ffmpeg) {
 //        delete(ffmpeg);

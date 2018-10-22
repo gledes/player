@@ -43,6 +43,10 @@ FFmpeg::~FFmpeg() {
     pthread_mutex_destroy(&seekMutex);
     delete dataSource;
     dataSource = NULL;
+    if (callHelper) {
+        delete(callHelper);
+        callHelper = NULL;
+    }
 
 
 }
